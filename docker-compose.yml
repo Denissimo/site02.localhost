@@ -6,25 +6,27 @@ networks:
   default:
     external: true
     name: gateway
-  dev1:
-    internal: true
+#  dev2:
+#    internal: true
 
 services:
   nginx:
     labels:
 #      - "traefik.enable=true"
-#      - "traefik.http.routers.site01.nginx.rule=Host(`site01.localhost`)"
-#      - "traefik.http.services.site01.nginx.loadbalancer.server.port=80"
+#      - "traefik.http.routers.site02.nginx.rule=Host(`site02.localhost`)"
+#      - "traefik.http.services.site02.nginx.loadbalancer.server.port=80"
 #      - "traefik.docker.network=gateway"
       traefik.enable: "true"
-      traefik.http.services.site01_nginx-80.loadbalancer.server.port: "80"
-      traefik.http.routers.site01_nginx.entrypoints: "web"
-      traefik.http.routers.site01_nginx.rule: "Host(`site01.localhost`)"
-#      traefik.http.routers.site01_nginx.service: "site01.nginx-80"
-    container_name: site01_nginx
-    hostname: site01_nginx
+      traefik.http.services.site02_nginx-80.loadbalancer.server.port: "80"
+      traefik.http.routers.site02_nginx.entrypoints: "web"
+      traefik.http.routers.site02_nginx.rule: "Host(`site02.localhost`)"
+#      traefik.http.routers.site02_nginx.service: "site02.nginx-80"
+    container_name: site02_nginx
+    hostname: site02_nginx
     # используем последний стабильный образ nginx
     image: nginx:latest
+    depends_on:
+      - php
 #    ports:
 #      - '80:80'
     # монтируем директории, слева директории на основной машине, справа - куда они монтируются в контейнере
@@ -39,9 +41,9 @@ services:
       - php
     networks:
       - default
-      - dev1
+#      - dev2
   php:
-    container_name: site01_php
+    container_name: site02_php
     # у нас свой образ для PHP, указываем путь к нему и говорим что его надо собрать
     build: ./images/php
     # монтируем директорию с проектами
@@ -50,3 +52,17 @@ services:
       - ./images/php/:/usr/local/etc/php/conf.d/
     networks:
       - default
+  postgresql:
+    image: 'bitnami/postgresql:latest'
+    container_name: site02_postgres
+    environment:
+      - POSTGRESQL_USERNAME=site02
+      - POSTGRESQL_PASSWORD=site02
+      - POSTGRESQL_DATABASE=site02_db
+    ports:
+      - 5532:5432
+    volumes:
+      - /var/lib/postgresql/data
+    networks:
+      - default
+#      - dev2
